@@ -1,0 +1,51 @@
+main.c
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX 100
+
+int graph[MAX][MAX];  // Adjacency matrix
+int visited[MAX];
+int n;
+
+// DFS ile grafı dolaş
+void dfs(int node) {
+    printf("%d ", node);
+    visited[node] = 1;
+
+    for (int i = 0; i < n; i++) {
+        if (graph[node][i] == 1 && !visited[i]) {
+            dfs(i);
+        }
+    }
+}
+
+int main() {
+    printf("Node sayisini gir: ");
+    scanf("%d", &n);
+
+    printf("Adjacency matrix girin:\n");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            scanf("%d", &graph[i][j]);
+        }
+    }
+
+    // visited dizisini sıfırla
+    for (int i = 0; i < n; i++)
+        visited[i] = 0;
+
+    int clusterCount = 0;
+
+    printf("\nGraf Clustering Sonucu (Bagli Bilesenler):\n");
+
+    for (int i = 0; i < n; i++) {
+        if (!visited[i]) {
+            printf("Cluster %d: ", ++clusterCount);
+            dfs(i);
+            printf("\n");
+        }
+    }
+
+    return 0;
+}
