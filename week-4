@@ -1,0 +1,122 @@
+main.c 
+#include <stdio.h>
+#include <stdlib.h>
+
+/* --- Node yapısı --- */
+typedef struct Node {
+    int data;
+    struct Node* prev;
+    struct Node* next;
+} Node;
+
+/* --- Yeni node oluşturma --- */
+Node* createNode(int data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = data;
+    newNode->prev = NULL;
+    newNode->next = NULL;
+    return newNode;
+}
+
+/* --- Sona eleman ekleme (O(n)) --- */
+void insertAtEnd(Node** head, int data) {
+    Node* newNode = createNode(data);
+
+    if (*head == NULL) {   // liste boşsa
+        *head = newNode;
+        return;
+    }
+
+    Node* temp = *head;
+    while (temp->next != NULL) {  // sondaki node’u bul
+        temp = temp->next;
+    }
+
+    temp->next = newNode;
+    newNode->prev = temp;
+}
+
+/* --- Tüm elemanları silme (O(n)) --- */
+void deleteAll(Node** head) {
+    Node* temp = *head;
+    Node* nextNode;
+
+    while (temp != NULL) {
+        nextNode = temp->next;
+        free(temp);
+        temp = nextNode;
+    }
+
+    *head = NULL; // liste artık boş
+}
+
+/* --- Linked list'ten array’e aktarma (O(n)) --- */
+int* toArray(Node* head, int* sizeOut) {
+    int count = 0;
+    Node* temp = head;
+
+    /* Eleman sayısını bul */
+    while (temp != NULL) {
+        count++;
+        temp = temp->next;
+    }
+
+    *sizeOut = count;
+    if (count == 0) return NULL;
+
+    /* Dinamik array oluştur */
+    int* arr = (int*)malloc(count * sizeof(int));
+
+    temp = head;
+    int i = 0;
+    while (temp != NULL) {
+        arr[i++] = temp->data;
+        temp = temp->next;
+    }
+
+    return arr;
+}
+
+/* --- Listeyi yazdırma --- */
+void printList(Node* head) {
+    Node* temp = head;
+    printf("List: ");
+    while (temp != NULL) {
+        printf("%d <-> ", temp->data);
+        temp = temp->next;
+    }
+    printf("NULL\n");
+}
+
+/* --- MAIN --- */
+int main() {
+    Node* head = NULL;
+
+    /* Sona eleman ekleme */
+    insertAtEnd(&head, 10);
+    insertAtEnd(&head, 20);
+    insertAtEnd(&head, 30);
+    insertAtEnd(&head, 40);
+
+    printf("After insertion:\n");
+    printList(head);
+
+    /* Linked list -> Dynamic Array */
+    int size;
+    int* arr = toArray(head, &size);
+
+    printf("\nArray contents: ");
+    for (int i = 0; i < size; i++)
+        printf("%d ", arr[i]);
+    printf("\n");
+
+    free(arr);
+
+    /* Tüm elemanları silme */
+    deleteAll(&head);
+
+    printf("\nAfter deleting all:\n");
+    printList(head);
+
+    return 0;
+}
