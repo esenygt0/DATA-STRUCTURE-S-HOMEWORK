@@ -1,0 +1,201 @@
+main.c
+/* array_ops.c
+   Dinamik tamsayı dizisi: tersten yazdırma, ekleme, çıkarma örneği
+   Derleme: gcc -std=c99 -O2 -o array_ops array_ops.c
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+/* Dinamik dizi yapısı */
+typedef struct {
+    int *data;
+    size_t size;     /* mevcut eleman sayısı */
+    size_t capacity; /* ayrılmış kapasite */
+} DynArray;
+
+/* Başlangıç: kapasiteyle oluştur */
+void initArray(DynArray *a, size_t initialCapacity) {
+    a->data = NULL;
+    a->size = 0;
+    a->capacity = 0;
+    if (initialCapacity > 0) {
+        a->data = malloc(initialCapacity * sizeof(int));
+        if (!a->data) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+        a->capacity = initialCapacity;
+    }
+}
+
+/* Belleği serbest bırak */
+void freeArray(DynArray *a) {
+    free(a->data);
+    a->data = NULL;
+    a->size = 0;
+    a->capacity = 0;
+}
+
+/* Kapasite garantile (gerekiyorsa büyüt) */
+void ensureCapacity(DynArray *a, size_t minCapacity) {
+    if (a->capacity >= minCapacity) return;
+    size_t newCap = a->capacity ? a->capacity * 2 : 4;
+    if (newCap < minCapacity) newCap = minCapacity;
+    int *tmp = realloc(a->data, newCap * sizeof(int));
+    if (!tmp) {
+        perror("realloc");
+        exit(EXIT_FAILURE);
+    }
+    a->data = tmp;
+    a->capacity = newCap;
+}
+
+/* Sonuna ekle */
+void append(DynArray *a, int value) {
+    ensureCapacity(a, a->size + 1);
+    a->data[a->size++] = value;
+}
+
+/* Belirli indise ekle (0..size). index==size ise sonuna ekleme ile eşdeğer */
+bool insertAt(DynArray *a, size_t index, int value) {
+    if (index > a->size) return false; /* geçersiz index */
+    ensureCapacity(a, a->size + 1);
+    /* kaydır */
+    for (size_t i = a->size; i > index; --i) {
+        a->data[i] = a->data[i-1];
+    }
+    a->data[index] = value;
+    a->size++;
+    return true;
+}
+
+/* Index'e göre çıkar, true dönerse valueOut'a çıkarılan değeri koyar */
+bool removeAt(DynArray *a, size_t index, int *valueOut) {
+    if (index >= a->size) return false;
+    if (valueOut) *valueOut = a->data[index];
+    for (size_t i = index; i + 1 < a->size; ++i) {
+        a->data[i] = a->data[i+1];
+    }
+    a->size--;
+    return true;
+}
+
+/* İlk bulunan değere göre sil (true = silindi) */
+bool removeByValue(DynArray *a, int value) {
+    for (size_t i = 0; i < a->size; ++i) {
+        if (a->data[i] == value) {
+            removeAt(a, i, NULL);
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Normal sırada yazdır */
+void printArray(const DynArray *a) {
+    printf("[");
+    for (size_t i = 0; i < a->size; ++i) {
+        printf("%d", a->data[i]);
+        if (i + 1 < a->size) printf(", ");
+    }
+    printf("]\n");
+}
+
+/* Tersten yazdır */
+void printArrayReverse(const DynArray *a) {
+    printf("[");
+    if (a->size > 0) {
+        for (size_t i = a->size; i-- > 0; ) {
+            printf("%d", a->data[i]);
+            if (i != 0) printf(", ");
+        }
+    }
+    printf("]\n");
+}
+
+/* Basit demo menüsü */
+void demo() {
+    DynArray arr;
+    initArray(&arr, 4);
+
+    /* örnek veri ekle */
+    append(&arr, 10);
+    append(&arr, 20);
+    append(&arr, 30);
+    append(&arr, 40);
+
+    printf("Başlangıç dizisi: ");
+    printArray(&arr);
+
+    printf("Tersten yazdırma: ");
+    printArrayReverse(&arr);
+
+    printf("İndis 2'ye 25 ekle (insertAt):\n");
+    insertAt(&arr, 2, 25);
+    printArray(&arr);
+
+    printf("Sonuna 50 ekle (append):\n");
+    append(&arr, 50);
+    printArray(&arr);
+
+    printf("Değer 30'u sil (removeByValue):\n");
+    if (removeByValue(&arr, 30)) printArray(&arr);
+    else printf("30 bulunamadı\n");
+
+    printf("İndis 1'deki elemanı removeAt ile çıkar:\n");
+    int removed;
+    if (removeAt(&arr, 1, &removed)) {
+        printf("Çıkarılan: %d\nYeni dizi: ", removed);
+        printArray(&arr);
+    } else {
+        printf("Geçersiz indis\n");
+    }
+
+    freeArray(&arr);
+}
+
+/* Basit interaktif menü (kullanmak istersen) */
+void interactiveMenu() {
+    DynArray arr;
+    initArray(&arr, 4);
+    int choice;
+    do {
+        printf("\n1: Ekle (son)\n2: İndise ekle\n3: İndise göre çıkar\n4: Değere göre çıkar\n5: Yazdır\n6: Tersten yazdır\n7: Çıkış\nSeçiminiz: ");
+        if (scanf("%d", &choice) != 1) { /* giriş hatası */
+            while (getchar() != '\n'); choice = 0; continue;
+        }
+        if (choice == 1) {
+            int v; printf("Eklenecek değer: "); scanf("%d", &v);
+            append(&arr, v);
+        } else if (choice == 2) {
+            int idx, v; printf("İndis (0..%zu): ", arr.size); scanf("%d %d", &idx, &v);
+            if (!insertAt(&arr, (size_t)idx, v)) printf("Geçersiz indis\n");
+        } else if (choice == 3) {
+            int idx; printf("Çıkarılacak indis: "); scanf("%d", &idx);
+            int out;
+            if (removeAt(&arr, (size_t)idx, &out)) printf("Çıkarıldı: %d\n", out);
+            else printf("Geçersiz indis\n");
+        } else if (choice == 4) {
+            int v; printf("Silinecek değer: "); scanf("%d", &v);
+            if (!removeByValue(&arr, v)) printf("Değer bulunamadı\n");
+            else printf("İlk bulunan değer silindi\n");
+        } else if (choice == 5) {
+            printArray(&arr);
+        } else if (choice == 6) {
+            printArrayReverse(&arr);
+        }
+    } while (choice != 7);
+    freeArray(&arr);
+}
+
+int main(void) {
+    printf("Dinamik dizi işlemleri demo\n\n");
+    demo();
+
+    /* Eğer interaktif menüyü test etmek istersen, aşağıdaki satırı aç:
+       interactiveMenu();
+    */
+    return 0;
+}
