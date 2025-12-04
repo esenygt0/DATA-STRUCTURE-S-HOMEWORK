@@ -1,0 +1,155 @@
+main.c
+#include <stdio.h>
+#include <stdlib.h>
+
+/* --- Node yapısı --- */
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+/* Yeni node oluşturma */
+Node* createNode(int data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (!newNode) {
+        printf("Memory allocation error!\n");
+        exit(1);
+    }
+    newNode->data = data;
+    newNode->next = NULL;
+    return newNode;
+}
+
+/* --- Başa ekleme --- O(1) */
+void insertAtHead(Node** head, int data) {
+    Node* newNode = createNode(data);
+    newNode->next = *head;
+    *head = newNode;
+}
+
+/* --- Sona ekleme --- O(n) */
+void insertAtTail(Node** head, int data) {
+    Node* newNode = createNode(data);
+
+    if (*head == NULL) {
+        *head = newNode;
+        return;
+    }
+
+    Node* temp = *head;
+    while (temp->next != NULL) {  // traversal
+        temp = temp->next;
+    }
+    temp->next = newNode;
+}
+
+/* --- Ortaya ekleme (pos = 0 → başa ekler) --- O(n) */
+void insertAtPosition(Node** head, int data, int pos) {
+    if (pos == 0) {
+        insertAtHead(head, data);
+        return;
+    }
+
+    Node* newNode = createNode(data);
+    Node* temp = *head;
+
+    for (int i = 0; i < pos - 1 && temp != NULL; i++) {
+        temp = temp->next;
+    }
+
+    if (temp == NULL) {
+        printf("Position out of range.\n");
+        free(newNode);
+        return;
+    }
+
+    newNode->next = temp->next;
+    temp->next = newNode;
+}
+
+/* --- Baştan silme --- O(1) */
+void deleteHead(Node** head) {
+    if (*head == NULL) return;
+
+    Node* temp = *head;
+    *head = (*head)->next;
+    free(temp);
+}
+
+/* --- Sondan silme --- O(n) */
+void deleteTail(Node** head) {
+    if (*head == NULL) return;
+
+    if ((*head)->next == NULL) {  // listede tek eleman varsa
+        free(*head);
+        *head = NULL;
+        return;
+    }
+
+    Node* temp = *head;
+    while (temp->next->next != NULL) {  // ultimi bul
+        temp = temp->next;
+    }
+
+    free(temp->next);
+    temp->next = NULL;
+}
+
+/* --- Ortadan silme (pos) --- O(n) */
+void deletePosition(Node** head, int pos) {
+    if (*head == NULL) return;
+
+    if (pos == 0) {
+        deleteHead(head);
+        return;
+    }
+
+    Node* temp = *head;
+    for (int i = 0; i < pos - 1 && temp->next != NULL; i++) {
+        temp = temp->next;
+    }
+
+    if (temp->next == NULL) {
+        printf("Position out of range.\n");
+        return;
+    }
+
+    Node* deleteNode = temp->next;
+    temp->next = temp->next->next;
+    free(deleteNode);
+}
+
+/* --- Traversal (listeyi gezme) --- O(n) */
+void traverseList(Node* head) {
+    Node* temp = head;
+    printf("List: ");
+    while (temp != NULL) {
+        printf("%d -> ", temp->data);
+        temp = temp->next;
+    }
+    printf("NULL\n");
+}
+
+/* --- MAIN --- */
+int main() {
+    Node* head = NULL;
+
+    /* Eleman ekleme */
+    insertAtHead(&head, 10);
+    insertAtTail(&head, 20);
+    insertAtTail(&head, 30);
+    insertAtPosition(&head, 15, 1); // 1. index'e ekle
+
+    printf("After insertions:\n");
+    traverseList(head);
+
+    /* Silme işlemleri */
+    deleteHead(&head);
+    deleteTail(&head);
+    deletePosition(&head, 1);  // ortadan silme
+
+    printf("After deletions:\n");
+    traverseList(head);
+
+    return 0;
+}
