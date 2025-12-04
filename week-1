@@ -1,8 +1,3 @@
-main.c
-/* array_ops.c
-   Dinamik tamsayı dizisi: tersten yazdırma, ekleme, çıkarma örneği
-   Derleme: gcc -std=c99 -O2 -o array_ops array_ops.c
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
